@@ -61,10 +61,10 @@ export const dbFunctions = {
                 .limit(limit)
                 .get();
                 
-            const docs = snapshot.docs.map(doc => doc.data());
+            const docs = snapshot.docs.map((doc: any) => doc.data());
             
             // Invertimos porque el LLM los necesita en orden cronologico
-            return docs.reverse().map(row => {
+            return docs.reverse().map((row: any) => {
                 const msg: any = { role: row.role };
                 if (row.content !== null) msg.content = row.content;
                 if (row.tool_calls !== null) msg.tool_calls = JSON.parse(row.tool_calls);
