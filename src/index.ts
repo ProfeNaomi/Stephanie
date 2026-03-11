@@ -1,8 +1,9 @@
 import { Bot } from "grammy";
+import * as http from "http";
 import { config } from "./config.js";
 import { processAgentLoop, clearAgentMemory } from "./agent/loop.js";
 
-// Inicializar el bot con el Token (debe existir para que compile, validamos en config)
+// Inicializar el bot con el Token
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN || 'DUMMY');
 
 // Middleware 1: Firewall para limitar acceso exclusivo (WHITELIST)
@@ -12,11 +13,8 @@ bot.use(async (ctx, next) => {
 
     if (!config.TELEGRAM_ALLOWED_USER_IDS.includes(userId)) {
         console.warn(`[Seguridad] Bloqueado mensaje de un usuario no autorizado: ${userId}`);
-        // Retornamos sin respuesta para mayor seguridad (o podemos decirle que no está autorizado)
-        // await ctx.reply("Acceso denegado. No eres Naomi.");
         return;
     }
-    
     await next();
 });
 
@@ -36,19 +34,16 @@ bot.on("message:text", async (ctx) => {
     const userId = ctx.from.id;
     const text = ctx.message.text;
 
-    // Indicador visual de que estamos procesando
     await ctx.replyWithChatAction("typing");
 
     try {
         const response = await processAgentLoop(userId, text);
         
-        // Telegram tiene un límite de longitud de caracteres de 4096 por mensaje
         if (response.length > 4000) {
             for (let i = 0; i < response.length; i += 4000) {
                 await ctx.reply(response.slice(i, i + 4000));
             }
         } else {
-            // Repuesta común
             await ctx.reply(response);
         }
     } catch (error) {
@@ -69,4 +64,16 @@ bot.start({
 // Error handling global
 bot.catch((err) => {
     console.error(`[Fatal] Excepción de Grammy arrojada:\n`, err);
+});
+
+// --- DUMMY WEB SERVER PARA RENDER.COM ---
+// Render requiere que expongamos un puerto web para no matar el proceso gratuito.
+const port = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('Stephanie IA Bot is running here.\n');
+});
+
+server.listen(port, () => {
+    console.log(`[Render Web Service] Servidor web fantasma escuchando en el puerto ${port}`);
 });
