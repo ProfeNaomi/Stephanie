@@ -12,6 +12,8 @@ RUN apk add --no-cache curl \
     && tar -xzf gogcli.tar.gz \
     && mv gogcli /usr/local/bin/gog \
     && rm gogcli.tar.gz \
+    && mkdir -p /root/.config/gogcli \
+    && ln -s /app/gog-config.json /root/.config/gogcli/config.json \
     && npm install
 
 # Copy all files (Except .dockerignore files)
