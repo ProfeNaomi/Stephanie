@@ -1,0 +1,25 @@
+{
+  "name": "stephanie-ia",
+  "version": "1.0.0",
+  "description": "Stephanie IA - Personal Local AI Agent",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.5.0",
+    "dotenv": "^16.4.5",
+    "firebase-admin": "^13.7.0",
+    "grammy": "^1.32.0",
+    "openai": "^4.71.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.11",
+    "@types/node": "^22.8.6",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.3"
+  }
+}
