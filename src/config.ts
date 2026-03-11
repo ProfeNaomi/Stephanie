@@ -10,6 +10,7 @@ export const config = {
     GROQ_API_KEY: process.env.GROQ_API_KEY || '',
     OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || '',
     OPENROUTER_MODEL: process.env.OPENROUTER_MODEL || 'openrouter/free',
+    ELEVENLABS_API_KEY: process.env.ELEVENLABS_API_KEY || '',
     DB_PATH: process.env.DB_PATH || './memory.db',
     GOOGLE_APPLICATION_CREDENTIALS: process.env.GOOGLE_APPLICATION_CREDENTIALS || './service-account.json',
 };

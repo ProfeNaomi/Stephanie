@@ -1,7 +1,9 @@
-import { Bot } from "grammy";
+import { Bot, InputFile } from "grammy";
 import * as http from "http";
+import * as fs from "fs";
 import { config } from "./config.js";
 import { processAgentLoop, clearAgentMemory } from "./agent/loop.js";
+import { transcribeAudio, generateTTS } from "./agent/audio.js";
 
 // Inicializar el bot con el Token
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN || 'DUMMY');
@@ -29,6 +31,62 @@ bot.command("clear", async (ctx) => {
     await ctx.reply("Memoria reseteada exitosamente. Estamos como nuevos.");
 });
 
+// Detectar audios y notas de voz
+bot.on(["message:voice", "message:audio"], async (ctx) => {
+    const userId = ctx.from.id;
+    
+    await ctx.replyWithChatAction("record_voice"); // Mostramos audífono/micrófono arriba mientras trabajamos
+
+    try {
+        const file = await ctx.getFile();
+        const fileUrl = `https://api.telegram.org/file/bot${config.TELEGRAM_BOT_TOKEN}/${file.file_path}`;
+        
+        // 1. STT: Transcribir el audio a texto
+        const textFromAudio = await transcribeAudio(fileUrl);
+        await ctx.reply(`🎤 _Escuchado:_ "${textFromAudio}"`, { parse_mode: "Markdown" }); // Opcional, pero da buen feedback
+        
+        await ctx.replyWithChatAction("typing");
+        
+        // 2. Cerebro LLC - Extraer la respuesta general del bot con herraminetas y memoria
+        const responseText = await processAgentLoop(userId, textFromAudio);
+        
+        await ctx.replyWithChatAction("record_voice");
+
+        // 3. TTS: Convertimos el texto final en voz usando ElevenLabs
+        const audioPath = await generateTTS(responseText);
+        
+        if (audioPath) {
+            // Mandamos el audio con Grammy usando un InputFile local
+            await ctx.replyWithVoice(new InputFile(audioPath));
+            
+            // Enviamos el texto también, por si el usuario no puede escuchar ahora, en chunks si es largo
+            if (responseText.length > 4000) {
+                for (let i = 0; i < responseText.length; i += 4000) {
+                    await ctx.reply(responseText.slice(i, i + 4000));
+                }
+            } else {
+                await ctx.reply(responseText);
+            }
+            
+            // Borramos el audio local porque ya se terminó de enviar
+            if (fs.existsSync(audioPath)) fs.unlinkSync(audioPath);
+        } else {
+            // Fallback (o no hay api key): Solo devolvemos texto
+            if (responseText.length > 4000) {
+                for (let i = 0; i < responseText.length; i += 4000) {
+                    await ctx.reply(responseText.slice(i, i + 4000));
+                }
+            } else {
+                await ctx.reply(responseText);
+            }
+        }
+
+    } catch (error) {
+        console.error("Error proceso de voz:", error);
+        await ctx.reply("Lo siento, no pude procesar tu mensaje de voz correctamente. Intenta de nuevo.");
+    }
+});
+
 // Detectar texto regular
 bot.on("message:text", async (ctx) => {
     const userId = ctx.from.id;
@@ -39,6 +97,7 @@ bot.on("message:text", async (ctx) => {
     try {
         const response = await processAgentLoop(userId, text);
         
+        // Si nos envió texto, solo le respondemos con texto. (Podrías modificar esto para mandar audio también)
         if (response.length > 4000) {
             for (let i = 0; i < response.length; i += 4000) {
                 await ctx.reply(response.slice(i, i + 4000));

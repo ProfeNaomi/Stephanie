@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import { config } from "../config.js";
 
 // Inicializamos clientes usando la interfaz compatible de OpenAI
-const groqClient = new OpenAI({
+export const groqClient = new OpenAI({
     apiKey: config.GROQ_API_KEY || 'dummy_key', // Prevenir crashes por falta de SDK variables y controlarlo antes
     baseURL: "https://api.groq.com/openai/v1"
 });
