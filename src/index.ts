@@ -5,8 +5,11 @@ import { config } from "./config.js";
 import { processAgentLoop, clearAgentMemory } from "./agent/loop.js";
 import { transcribeAudio, generateTTS } from "./agent/audio.js";
 
+import { hydrateFiles } from "@grammyjs/files";
+
 // Inicializar el bot con el Token
 const bot = new Bot(config.TELEGRAM_BOT_TOKEN || 'DUMMY');
+bot.api.config.use(hydrateFiles(bot.token));
 
 // Middleware 1: Firewall para limitar acceso exclusivo (WHITELIST)
 bot.use(async (ctx, next) => {
